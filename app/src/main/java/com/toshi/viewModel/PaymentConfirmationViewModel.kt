@@ -124,6 +124,7 @@ class PaymentConfirmationViewModel : ViewModel() {
 
     private fun getPaymentTask() {
         val unsignedW3Transaction = getUnsignedW3Transaction()
+        val callbackId = getCallbackId()
         val toshiId = getToshiId()
         val encodedEthAmount = getEncodedEthAmount()
         val paymentAddress = getPaymentAddress()
@@ -132,7 +133,7 @@ class PaymentConfirmationViewModel : ViewModel() {
         val tokenDecimals = getTokenDecimals()
 
         when {
-            unsignedW3Transaction != null -> getPaymentTaskWithUnsignedW3Transaction(unsignedW3Transaction) // Unsigned transaction
+            unsignedW3Transaction != null && callbackId != null -> getPaymentTaskWithUnsignedW3Transaction(unsignedW3Transaction, callbackId) // Unsigned transaction
             toshiId != null -> getPaymentTaskWithToshiId(toshiId, encodedEthAmount) // Toshi transaction
             tokenAddress != null && paymentAddress != null && tokenSymbol != null && tokenDecimals != null -> { // Token transaction
                 getPaymentTaskWithTokenAddress(tokenAddress, tokenSymbol, tokenDecimals, paymentAddress, encodedEthAmount)
@@ -212,9 +213,9 @@ class PaymentConfirmationViewModel : ViewModel() {
         this.subscriptions.add(sub)
     }
 
-    private fun getPaymentTaskWithUnsignedW3Transaction(unsignedW3Transaction: String) {
+    private fun getPaymentTaskWithUnsignedW3Transaction(unsignedW3Transaction: String, callbackId: String) {
         val transaction = SofaAdapters.get().unsignedW3TransactionFrom(unsignedW3Transaction)
-        val sub = getPaymentTaskWithUnsignedW3Transaction(transaction)
+        val sub = getPaymentTaskWithUnsignedW3Transaction(transaction, callbackId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe { isLoading.value = true }
@@ -256,8 +257,10 @@ class PaymentConfirmationViewModel : ViewModel() {
         )
     }
 
-    private fun getPaymentTaskWithUnsignedW3Transaction(unsignedW3Transaction: UnsignedW3Transaction): Single<W3PaymentTask> {
-        val callbackId = getCallbackId()
+    private fun getPaymentTaskWithUnsignedW3Transaction(
+            unsignedW3Transaction: UnsignedW3Transaction,
+            callbackId: String
+    ): Single<W3PaymentTask> {
         return transactionManager.buildPaymentTask(callbackId, unsignedW3Transaction)
     }
 
