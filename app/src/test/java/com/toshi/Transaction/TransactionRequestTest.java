@@ -1,4 +1,4 @@
-package com.toshi.Transaction;
+package com.toshi.transaction;
 
 import com.toshi.model.local.UnsignedW3Transaction;
 import com.toshi.model.network.TransactionRequest;
