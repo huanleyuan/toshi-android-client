@@ -18,12 +18,14 @@
 package com.toshi.util.paymentTask
 
 import com.toshi.crypto.util.TypeConverter
+import com.toshi.manager.BalanceManager
+import com.toshi.manager.RecipientManager
+import com.toshi.manager.TransactionManager
 import com.toshi.manager.model.ERC20TokenPaymentTask
 import com.toshi.manager.model.ExternalPaymentTask
 import com.toshi.manager.model.PaymentTask
 import com.toshi.manager.model.ToshiPaymentTask
 import com.toshi.manager.model.W3PaymentTask
-import com.toshi.manager.network.EthereumService
 import com.toshi.model.local.EthAndFiat
 import com.toshi.model.local.UnsignedW3Transaction
 import com.toshi.model.local.User
@@ -33,15 +35,15 @@ import com.toshi.model.sofa.payment.ERC20TokenPayment
 import com.toshi.model.sofa.payment.Payment
 import com.toshi.util.EthUtil
 import com.toshi.util.logging.LogUtil
-import com.toshi.view.BaseApplication
 import rx.Single
 import java.math.BigDecimal
 
-class PaymentTaskBuilder {
-
-    private val balanceManager by lazy { BaseApplication.get().balanceManager }
-    private val recipientManager by lazy { BaseApplication.get().recipientManager }
-    private val transactionBuilder by lazy { TransactionRequestBuilder() }
+class PaymentTaskBuilder(
+        private val transactionManager: TransactionManager,
+        private val balanceManager: BalanceManager,
+        private val recipientManager: RecipientManager,
+        private val transactionBuilder: TransactionRequestBuilder = TransactionRequestBuilder()
+) {
 
     fun buildPaymentTask(fromPaymentAddress: String,
                          toPaymentAddress: String,
@@ -83,18 +85,16 @@ class PaymentTaskBuilder {
     private fun createUnsignedTransaction(payment: Payment, sendMaxAmount: Boolean): Single<UnsignedTransaction> {
         val transactionRequest = if (sendMaxAmount) transactionBuilder.generateMaxAmountTransactionRequest(payment)
         else transactionBuilder.generateTransactionRequest(payment)
-        return EthereumService
-                .getApi()
+        return transactionManager
                 .createTransaction(transactionRequest)
-                .doOnError { LogUtil.exception("Error while creating unsigned transaction", it) }
+                .doOnError { LogUtil.exception("Error while creating unsigned transaction with max amount", it) }
     }
 
     private fun createUnsignedTransaction(payment: ERC20TokenPayment): Single<UnsignedTransaction> {
         val transactionRequest = transactionBuilder.generateTransactionRequest(payment)
-        return EthereumService
-                .getApi()
+        return transactionManager
                 .createTransaction(transactionRequest)
-                .doOnError { LogUtil.exception("Error while creating unsigned transaction", it) }
+                .doOnError { LogUtil.exception("Error while creating unsigned token transaction", it) }
     }
 
     private fun getPaymentInfoAndUser(unsignedTransaction: UnsignedTransaction,
@@ -157,8 +157,7 @@ class PaymentTaskBuilder {
 
     private fun createUnsignedW3Transaction(unsignedW3Transaction: UnsignedW3Transaction): Single<UnsignedTransaction> {
         val transactionRequest = transactionBuilder.generateTransactionRequest(unsignedW3Transaction)
-        return EthereumService
-                .getApi()
+        return transactionManager
                 .createTransaction(transactionRequest)
                 .doOnError { LogUtil.exception("Error while creating unsigned W3 transaction", it) }
     }

@@ -24,6 +24,7 @@ import com.toshi.manager.model.PaymentTask;
 import com.toshi.manager.model.ResendToshiPaymentTask;
 import com.toshi.manager.model.ToshiPaymentTask;
 import com.toshi.manager.model.W3PaymentTask;
+import com.toshi.manager.network.EthereumService;
 import com.toshi.manager.store.PendingTransactionStore;
 import com.toshi.manager.transaction.IncomingTransactionManager;
 import com.toshi.manager.transaction.OutgoingTransactionManager;
@@ -35,11 +36,16 @@ import com.toshi.model.local.UnsignedW3Transaction;
 import com.toshi.model.local.User;
 import com.toshi.model.network.SentTransaction;
 import com.toshi.model.network.SignedTransaction;
+import com.toshi.model.network.TransactionRequest;
+import com.toshi.model.network.UnsignedTransaction;
 import com.toshi.model.sofa.PaymentRequest;
 import com.toshi.model.sofa.SofaMessage;
 import com.toshi.model.sofa.payment.ERC20TokenPayment;
 import com.toshi.model.sofa.payment.Payment;
+import com.toshi.util.logging.LogUtil;
 import com.toshi.util.paymentTask.PaymentTaskBuilder;
+import com.toshi.util.paymentTask.TransactionRequestBuilder;
+import com.toshi.view.BaseApplication;
 
 import rx.Observable;
 import rx.Single;
@@ -77,7 +83,12 @@ public class TransactionManager {
     }
 
     private void initPaymentTaskBuilder() {
-        this.paymentTaskBuilder = new PaymentTaskBuilder();
+        this.paymentTaskBuilder = new PaymentTaskBuilder(
+                this,
+                BaseApplication.get().getBalanceManager(),
+                BaseApplication.get().getRecipientManager(),
+                new TransactionRequestBuilder()
+        );
     }
 
     private void initIncomingTransactionManager() {
@@ -213,6 +224,13 @@ public class TransactionManager {
                 .getIncomingTokenPaymentsSubject()
                 .asObservable()
                 .ofType(ERC20TokenPayment.class);
+    }
+
+    public Single<UnsignedTransaction> createTransaction(final TransactionRequest transactionRequest) {
+        return EthereumService
+                .getApi()
+                .createTransaction(transactionRequest)
+                .doOnError(throwable -> LogUtil.exception("Error while creating transaction", throwable));
     }
 
     public void clear() {
