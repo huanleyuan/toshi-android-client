@@ -25,6 +25,7 @@ import com.squareup.moshi.Json;
 import com.toshi.R;
 import com.toshi.crypto.HDWallet;
 import com.toshi.crypto.util.TypeConverter;
+import com.toshi.manager.BalanceManager;
 import com.toshi.model.local.SendState;
 import com.toshi.model.sofa.SofaType;
 import com.toshi.util.EthUtil;
@@ -126,13 +127,13 @@ public class Payment {
         return this.androidClientSideCustomData.localPrice;
     }
 
-    public Single<Payment> generateLocalPrice() {
+    public Single<Payment> generateLocalPrice(final BalanceManager balanceManager) {
         final BigInteger weiAmount = TypeConverter.StringHexToBigInteger(this.value);
         final BigDecimal ethAmount = EthUtil.weiToEth(weiAmount);
-        return BaseApplication
-                .get()
-                .getBalanceManager()
-                .convertEthToLocalCurrencyString(ethAmount)
+
+        return balanceManager
+                .getLocalCurrencyExchangeRate()
+                .map(exchangeRate -> balanceManager.toLocalCurrencyString(exchangeRate, ethAmount))
                 .map(this::setLocalPrice);
     }
 
@@ -151,8 +152,7 @@ public class Payment {
     }
 
     public Single<Integer> getPaymentDirection() {
-        return BaseApplication
-                .get()
+        return BaseApplication.get()
                 .getToshiManager()
                 .getWallet()
                 .toObservable()

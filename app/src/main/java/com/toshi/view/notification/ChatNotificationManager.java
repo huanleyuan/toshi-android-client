@@ -176,7 +176,7 @@ public class ChatNotificationManager extends ToshiNotificationBuilder {
                 .toObservable()
                 .filter(wallet -> paymentNotSentByLocalUser(wallet, payment))
                 .toSingle()
-                .flatMap(__ -> payment.generateLocalPrice())
+                .flatMap(__ -> payment.generateLocalPrice(BaseApplication.get().getBalanceManager()))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .map(paymentWithLocalPrice -> addLocalPriceToSofaMessage(paymentWithLocalPrice, sofaMessage))

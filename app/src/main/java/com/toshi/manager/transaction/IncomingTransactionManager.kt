@@ -81,7 +81,7 @@ class IncomingTransactionManager(private val pendingTransactionStore: PendingTra
     private fun getUpdatedPayment(incomingEthPaymentTask: IncomingEthPaymentTask): Single<IncomingEthPaymentTask> {
         val user = incomingEthPaymentTask.user
         return incomingEthPaymentTask.payment
-                .generateLocalPrice()
+                .generateLocalPrice(BaseApplication.get().balanceManager)
                 .map { storePayment(user, it) }
                 .map { incomingEthPaymentTask.copy(sofaMessage = it) }
                 .subscribeOn(Schedulers.io())

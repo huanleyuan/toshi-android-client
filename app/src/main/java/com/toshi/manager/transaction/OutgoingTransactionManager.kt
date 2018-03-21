@@ -51,6 +51,7 @@ class OutgoingTransactionManager(
     private val subscriptions by lazy { CompositeSubscription() }
     private var outgoingPaymentSub: Subscription? = null
     private val paymentErrorTask by lazy { PaymentErrorTask() }
+    private val balanceManager by lazy { BaseApplication.get().balanceManager }
     val outgoingPaymentResultSubject by lazy { PublishSubject.create<OutgoingPaymentResult>() }
 
     fun attachNewOutgoingPaymentSubscriber() {
@@ -87,7 +88,7 @@ class OutgoingTransactionManager(
         val receiver = getReceiverFromTask(paymentTask)
         val sender = getSenderFromTask(paymentTask)
         return paymentTask.payment
-                .generateLocalPrice()
+                .generateLocalPrice(balanceManager)
                 .map { storePayment(receiver, it, sender) }
                 .map { Pair(paymentTask, it) }
                 .subscribeOn(Schedulers.io())
@@ -175,7 +176,7 @@ class OutgoingTransactionManager(
         val receiver = getReceiverFromTask(paymentTask)
         val sender = getSenderFromTask(paymentTask)
         return paymentTask.payment
-                .generateLocalPrice()
+                .generateLocalPrice(balanceManager)
                 .doOnSuccess { storePayment(receiver, it, sender) }
                 .map { paymentTask }
                 .subscribeOn(Schedulers.io())
