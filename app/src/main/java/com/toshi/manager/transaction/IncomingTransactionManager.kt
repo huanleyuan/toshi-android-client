@@ -40,6 +40,7 @@ class IncomingTransactionManager(private val pendingTransactionStore: PendingTra
 
     private val sofaMessageManager by lazy { BaseApplication.get().sofaMessageManager }
     private val recipientManager by lazy { BaseApplication.get().recipientManager }
+    private val balanceManager by lazy { BaseApplication.get().balanceManager }
 
     private val newIncomingPaymentQueue by lazy { PublishSubject.create<IncomingPaymentTask>() }
     private val subscriptions by lazy { CompositeSubscription() }
@@ -80,8 +81,8 @@ class IncomingTransactionManager(private val pendingTransactionStore: PendingTra
 
     private fun getUpdatedPayment(incomingEthPaymentTask: IncomingEthPaymentTask): Single<IncomingEthPaymentTask> {
         val user = incomingEthPaymentTask.user
-        return incomingEthPaymentTask.payment
-                .generateLocalPrice(BaseApplication.get().balanceManager)
+        return balanceManager
+                .generateLocalPrice(incomingEthPaymentTask.payment)
                 .map { storePayment(user, it) }
                 .map { incomingEthPaymentTask.copy(sofaMessage = it) }
                 .subscribeOn(Schedulers.io())

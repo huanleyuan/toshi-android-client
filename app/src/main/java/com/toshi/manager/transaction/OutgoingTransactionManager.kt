@@ -87,8 +87,8 @@ class OutgoingTransactionManager(
     private fun getUpdatedToshiPayment(paymentTask: ToshiPaymentTask): Single<Pair<ToshiPaymentTask, SofaMessage>> {
         val receiver = getReceiverFromTask(paymentTask)
         val sender = getSenderFromTask(paymentTask)
-        return paymentTask.payment
-                .generateLocalPrice(balanceManager)
+        return balanceManager
+                .generateLocalPrice(paymentTask.payment)
                 .map { storePayment(receiver, it, sender) }
                 .map { Pair(paymentTask, it) }
                 .subscribeOn(Schedulers.io())
@@ -175,8 +175,8 @@ class OutgoingTransactionManager(
     private fun getUpdatedPayment(paymentTask: PaymentTask): Single<PaymentTask> {
         val receiver = getReceiverFromTask(paymentTask)
         val sender = getSenderFromTask(paymentTask)
-        return paymentTask.payment
-                .generateLocalPrice(balanceManager)
+        return balanceManager
+                .generateLocalPrice(paymentTask.payment)
                 .doOnSuccess { storePayment(receiver, it, sender) }
                 .map { paymentTask }
                 .subscribeOn(Schedulers.io())

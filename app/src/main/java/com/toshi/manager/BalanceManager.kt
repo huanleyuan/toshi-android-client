@@ -19,6 +19,7 @@ package com.toshi.manager
 
 import android.content.Context
 import com.toshi.crypto.HDWallet
+import com.toshi.crypto.util.TypeConverter
 import com.toshi.manager.network.CurrencyInterface
 import com.toshi.manager.network.CurrencyService
 import com.toshi.manager.network.EthereumInterface
@@ -37,6 +38,7 @@ import com.toshi.model.network.token.ERC721Tokens
 import com.toshi.model.network.token.ERCToken
 import com.toshi.model.sofa.payment.Payment
 import com.toshi.util.CurrencyUtil
+import com.toshi.util.EthUtil
 import com.toshi.util.EthUtil.BIG_DECIMAL_SCALE
 import com.toshi.util.FileNames
 import com.toshi.util.GcmPrefsUtil
@@ -152,6 +154,14 @@ class BalanceManager(
     private fun handleNewBalance(balance: Balance) {
         writeLastKnownBalance(balance)
         balanceObservable.onNext(balance)
+    }
+
+    fun generateLocalPrice(payment: Payment): Single<Payment> {
+        val weiAmount = TypeConverter.StringHexToBigInteger(payment.value)
+        val ethAmount = EthUtil.weiToEth(weiAmount)
+        return getLocalCurrencyExchangeRate()
+                .map { toLocalCurrencyString(it, ethAmount) }
+                .map(payment::setLocalPrice)
     }
 
     fun getLocalCurrencyExchangeRate(): Single<ExchangeRate> {

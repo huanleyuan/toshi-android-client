@@ -54,7 +54,7 @@ class PaymentTaskBuilder(
                 .setFromAddress(fromPaymentAddress)
                 .setToAddress(toPaymentAddress)
 
-        return payment.generateLocalPrice(balanceManager)
+        return balanceManager.generateLocalPrice(payment)
                 .flatMap { createUnsignedTransaction(payment, sendMaxAmount) }
                 .flatMap { getPaymentInfoAndUser(it, toPaymentAddress) }
                 .map { buildPaymentTask(it.first, it.second, payment) }

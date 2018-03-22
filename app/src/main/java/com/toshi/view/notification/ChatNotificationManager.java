@@ -176,7 +176,7 @@ public class ChatNotificationManager extends ToshiNotificationBuilder {
                 .toObservable()
                 .filter(wallet -> paymentNotSentByLocalUser(wallet, payment))
                 .toSingle()
-                .flatMap(__ -> payment.generateLocalPrice(BaseApplication.get().getBalanceManager()))
+                .flatMap(__ -> generateLocalPrice(payment))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .map(paymentWithLocalPrice -> addLocalPriceToSofaMessage(paymentWithLocalPrice, sofaMessage))
@@ -184,6 +184,13 @@ public class ChatNotificationManager extends ToshiNotificationBuilder {
                         sofaMessageWithLocalPrice -> showPaymentNotification(sender, sofaMessageWithLocalPrice),
                         throwable -> LogUtil.w("Error while fetching local price " + throwable)
                 );
+    }
+
+    private static Single<Payment> generateLocalPrice(final Payment payment) {
+        return BaseApplication
+                .get()
+                .getBalanceManager()
+                .generateLocalPrice(payment);
     }
 
     private static boolean paymentNotSentByLocalUser(final HDWallet wallet, final Payment payment) {
