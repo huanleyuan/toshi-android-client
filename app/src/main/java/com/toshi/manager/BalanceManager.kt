@@ -17,7 +17,6 @@
 
 package com.toshi.manager
 
-import android.content.Context
 import com.toshi.crypto.HDWallet
 import com.toshi.crypto.util.TypeConverter
 import com.toshi.manager.network.CurrencyInterface
@@ -40,11 +39,13 @@ import com.toshi.model.sofa.payment.Payment
 import com.toshi.util.CurrencyUtil
 import com.toshi.util.EthUtil
 import com.toshi.util.EthUtil.BIG_DECIMAL_SCALE
-import com.toshi.util.FileNames
 import com.toshi.util.GcmPrefsUtil
 import com.toshi.util.GcmUtil
-import com.toshi.util.SharedPrefsUtil
 import com.toshi.util.logging.LogUtil
+import com.toshi.util.sharedPrefs.BalancePrefs
+import com.toshi.util.sharedPrefs.BalancePrefsInterface
+import com.toshi.util.sharedPrefs.SharedPrefs
+import com.toshi.util.sharedPrefs.SharedPrefsInterface
 import com.toshi.view.BaseApplication
 import rx.Completable
 import rx.Single
@@ -58,14 +59,11 @@ import java.util.concurrent.TimeUnit
 
 class BalanceManager(
         private val ethService: EthereumInterface = EthereumService.getApi(),
-        private val currencyService: CurrencyInterface = CurrencyService.getApi()
+        private val currencyService: CurrencyInterface = CurrencyService.getApi(),
+        private val balancePrefs: BalancePrefsInterface = BalancePrefs(),
+        private val sharedPrefs: SharedPrefsInterface = SharedPrefs
 ) {
-    companion object {
-        private const val LAST_KNOWN_BALANCE = "lkb"
-    }
-
     private lateinit var wallet: HDWallet
-    private val prefs by lazy { BaseApplication.get().getSharedPreferences(FileNames.BALANCE_PREFS, Context.MODE_PRIVATE) }
     private val networks by lazy { Networks.getInstance() }
     private var connectivitySub: Subscription? = null
     val balanceObservable: BehaviorSubject<Balance> = BehaviorSubject.create<Balance>()
@@ -200,7 +198,7 @@ class BalanceManager(
         return String.format("%s%s %s", currencySymbol, amount, currencyCode)
     }
 
-    private fun getLocalCurrency(): Single<String> = Single.fromCallable { SharedPrefsUtil.getCurrency() }
+    fun getLocalCurrency(): Single<String> = Single.fromCallable { sharedPrefs.getCurrency() }
 
     fun convertEthToLocalCurrency(ethAmount: BigDecimal): Single<BigDecimal> {
         return getLocalCurrencyExchangeRate()
@@ -243,28 +241,20 @@ class BalanceManager(
                 .getStatusOfTransaction(transactionHash)
     }
 
-    private fun readLastKnownBalance(): String = prefs.getString(LAST_KNOWN_BALANCE, "0x0")
-
-    private fun writeLastKnownBalance(balance: Balance) {
-        prefs.edit()
-                .putString(LAST_KNOWN_BALANCE, balance.unconfirmedBalanceAsHex)
-                .apply()
-    }
-
     //Don't unregister the default network
     fun changeNetwork(network: Network): Completable {
         return if (networks.onDefaultNetwork()) {
             changeEthBaseUrl(network)
                     .andThen(registerEthGcm())
                     .subscribeOn(Schedulers.io())
-                    .doOnCompleted { SharedPrefsUtil.setCurrentNetwork(network) }
+                    .doOnCompleted { sharedPrefs.setCurrentNetwork(network) }
         } else GcmUtil
                 .getGcmToken()
                 .flatMapCompletable { unregisterFromEthGcm(it) }
                 .andThen(changeEthBaseUrl(network))
                 .andThen(registerEthGcm())
                 .subscribeOn(Schedulers.io())
-                .doOnCompleted { SharedPrefsUtil.setCurrentNetwork(network) }
+                .doOnCompleted { sharedPrefs.setCurrentNetwork(network) }
     }
 
     fun unregisterFromEthGcm(token: String): Completable {
@@ -326,11 +316,13 @@ class BalanceManager(
         GcmPrefsUtil.setEthGcmTokenSentToServer(currentNetworkId, false)
     }
 
+    private fun readLastKnownBalance(): String = balancePrefs.readLastKnownBalance()
+
+    private fun writeLastKnownBalance(balance: Balance) = balancePrefs.writeLastKnownBalance(balance)
+
     fun clear() {
         clearConnectivitySubscription()
-        prefs.edit()
-                .clear()
-                .apply()
+        balancePrefs.clear()
     }
 
     private fun getWallet(): Single<HDWallet> {
