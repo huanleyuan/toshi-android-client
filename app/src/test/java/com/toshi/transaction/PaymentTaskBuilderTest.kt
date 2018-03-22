@@ -25,24 +25,31 @@ import com.toshi.manager.TransactionManager
 import com.toshi.manager.model.ERC20TokenPaymentTask
 import com.toshi.manager.model.PaymentTask
 import com.toshi.manager.model.ToshiPaymentTask
+import com.toshi.manager.model.W3PaymentTask
+import com.toshi.manager.network.CurrencyInterface
 import com.toshi.manager.network.EthereumInterface
+import com.toshi.model.local.UnsignedW3Transaction
 import com.toshi.model.local.User
 import com.toshi.model.network.ExchangeRate
 import com.toshi.model.network.TransactionRequest
 import com.toshi.model.network.UnsignedTransaction
 import com.toshi.util.EthUtil
 import com.toshi.util.paymentTask.PaymentTaskBuilder
+import com.toshi.util.sharedPrefs.BalancePrefsInterface
+import com.toshi.util.sharedPrefs.SharedPrefsInterface
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
 import org.hamcrest.Matchers.instanceOf
 import org.hamcrest.Matchers.notNullValue
 import org.junit.Before
 import org.junit.Test
-import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito
 import rx.Single
 import rx.schedulers.Schedulers
 import java.math.BigDecimal
+import java.text.DecimalFormat
 
 class PaymentTaskBuilderTest {
 
@@ -52,19 +59,24 @@ class PaymentTaskBuilderTest {
     private lateinit var paymentTaskBuilder: PaymentTaskBuilder
     private lateinit var exchangeRate: ExchangeRate
     private lateinit var unsignedTransaction: UnsignedTransaction
-    private lateinit var testSendAmountHex: String
-    private val testSendAmount = "10.00"
-    private val testSendUserPaymentAddress = "0x4a40d412f25db163a9af6190752c0758bdca6aa3"
-    private val testReceiverUserPaymentAddress = "0x4a40d412f25db163a9af6190752c0758bdca6aa0"
+    private lateinit var testEthAmountHex: String
+    private lateinit var unsignedW3Transaction: UnsignedW3Transaction
+    private val testFiatAmount = "10.00"
+    private val testTokenAmount = "15.00"
+    private val testSenderPaymentAddress = "0x4a40d412f25db163a9af6190752c0758bdca6aa3"
+    private val testReceiverPaymentAddress = "0x4a40d412f25db163a9af6190752c0758bdca6aa0"
     private val testTokenAddress = "0x4a40d412f25db163a9af6190752c0758bdca6aa1"
     private val fromCurrency = "ETH"
     private val toCurrency = "USD"
     private val tokenDecimals = 18
+    private val callbackId = "1"
+    private val tokenSymbol = "OMG"
 
     @Before
     fun setup() {
         mockEthToUsdExchangeRate()
         calcSendAmount()
+        mockUnsignedW3Transaction()
         mockUnsignedTransaction()
         mockTransactionManager()
         mockRecipientManager()
@@ -86,9 +98,24 @@ class PaymentTaskBuilderTest {
     }
 
     private fun calcSendAmount() {
-        val decimalString = EthUtil.fiatToEth(exchangeRate, createSafeBigDecimal(testSendAmount))
+        val decimalString = EthUtil.fiatToEth(exchangeRate, createSafeBigDecimal(testFiatAmount))
         val weiAmount = EthUtil.ethToWei(BigDecimal(decimalString))
-        testSendAmountHex = TypeConverter.toJsonHex(weiAmount)
+        testEthAmountHex = TypeConverter.toJsonHex(weiAmount)
+    }
+
+    private fun mockUnsignedW3Transaction() {
+        unsignedW3Transaction = Mockito.mock(UnsignedW3Transaction::class.java)
+        Mockito
+                .`when`(unsignedW3Transaction.from)
+                .thenReturn(testSenderPaymentAddress)
+
+        Mockito
+                .`when`(unsignedW3Transaction.to)
+                .thenReturn(testReceiverPaymentAddress)
+
+        Mockito
+                .`when`(unsignedW3Transaction.value)
+                .thenReturn(testEthAmountHex)
     }
 
     private fun mockUnsignedTransaction() {
@@ -107,13 +134,13 @@ class PaymentTaskBuilderTest {
                 .thenReturn("0xef85746f6b65e2843b9aca00825208944a40d412f25db163a9af6190752c0758bdca6aa387061d3d89a8900080748080")
         Mockito
                 .`when`(unsignedTransaction.value)
-                .thenReturn(testSendAmountHex)
+                .thenReturn(testEthAmountHex)
     }
 
     private fun mockTransactionManager() {
         val ethApi = Mockito.mock(EthereumInterface::class.java)
         Mockito
-                .`when`(ethApi.createTransaction(ArgumentMatchers.any(TransactionRequest::class.java)))
+                .`when`(ethApi.createTransaction(any(TransactionRequest::class.java)))
                 .thenReturn(Single.just(unsignedTransaction))
 
         transactionManager = TransactionManager(
@@ -125,22 +152,31 @@ class PaymentTaskBuilderTest {
     private fun mockRecipientManager() {
         recipientManager = Mockito.mock(RecipientManager::class.java)
         Mockito
-                .`when`(recipientManager.getUserFromPaymentAddress(testReceiverUserPaymentAddress))
+                .`when`(recipientManager.getUserFromPaymentAddress(testReceiverPaymentAddress))
                 .thenReturn(Single.just(User()))
     }
 
     private fun mockBalanceManager() {
-        balanceManager = Mockito.mock(BalanceManager::class.java)
+        val ethApi = Mockito.mock(EthereumInterface::class.java)
+        val currencyApi = Mockito.mock(CurrencyInterface::class.java)
+        val sharedPrefs = Mockito.mock(SharedPrefsInterface::class.java)
+        val balancePrefs = Mockito.mock(BalancePrefsInterface::class.java)
+
         Mockito
-                .`when`(balanceManager.getLocalCurrencyExchangeRate())
+                .`when`(currencyApi.getRates(anyString()))
                 .thenReturn(Single.just(exchangeRate))
 
         Mockito
-                .`when`(balanceManager.toLocalCurrencyString(
-                        ArgumentMatchers.any(ExchangeRate::class.java),
-                        ArgumentMatchers.any(BigDecimal::class.java))
-                )
-                .thenCallRealMethod()
+                .`when`(sharedPrefs.getCurrency())
+                .thenReturn("USD")
+
+        balanceManager = BalanceManager(
+                ethService = ethApi,
+                currencyService = currencyApi,
+                sharedPrefs = sharedPrefs,
+                balancePrefs = balancePrefs,
+                subscribeOnScheduler = Schedulers.trampoline()
+        )
     }
 
     private fun createPaymentTaskBuilder() {
@@ -154,9 +190,9 @@ class PaymentTaskBuilderTest {
     @Test
     fun testBuildToshiPaymentTask() {
         val paymentTask = paymentTaskBuilder.buildPaymentTask(
-                fromPaymentAddress = testSendUserPaymentAddress,
-                toPaymentAddress = testReceiverUserPaymentAddress,
-                ethAmount = testSendAmountHex,
+                fromPaymentAddress = testSenderPaymentAddress,
+                toPaymentAddress = testReceiverPaymentAddress,
+                ethAmount = testEthAmountHex,
                 sendMaxAmount = false
         ).toBlocking().value()
 
@@ -166,11 +202,23 @@ class PaymentTaskBuilderTest {
         assertPaymentTaskValues(paymentTask)
     }
 
+    @Test
+    fun testBuildW3PaymentTask() {
+        val paymentTask = paymentTaskBuilder
+                .buildW3PaymentTask(callbackId, unsignedW3Transaction)
+                .toBlocking()
+                .value()
+
+        assertThat(paymentTask, instanceOf(W3PaymentTask::class.java))
+        assertThat(paymentTask.callbackId, `is`(notNullValue()))
+        assertPaymentTaskValues(paymentTask)
+    }
+
     private fun assertPaymentTaskValues(paymentTask: PaymentTask) {
-        assertThat(paymentTask.payment.toAddress, `is`(testReceiverUserPaymentAddress))
-        assertThat(paymentTask.payment.fromAddress, `is`(testSendUserPaymentAddress))
-        assertThat(paymentTask.payment.value, `is`(testSendAmountHex))
-        val expectedEthAmount = EthUtil.weiToEth(TypeConverter.StringHexToBigInteger(testSendAmountHex))
+        assertThat(paymentTask.payment.toAddress, `is`(testReceiverPaymentAddress))
+        assertThat(paymentTask.payment.fromAddress, `is`(testSenderPaymentAddress))
+        assertThat(paymentTask.payment.value, `is`(testEthAmountHex))
+        val expectedEthAmount = EthUtil.weiToEth(TypeConverter.StringHexToBigInteger(testEthAmountHex))
         assertThat(paymentTask.paymentAmount.ethAmount, `is`(expectedEthAmount))
         assertThat(paymentTask.totalAmount.ethAmount, `is`(expectedEthAmount + paymentTask.gasPrice.ethAmount))
     }
@@ -178,13 +226,28 @@ class PaymentTaskBuilderTest {
     @Test
     fun testBuildERC20PaymentTask() {
         val paymentTask = paymentTaskBuilder.buildERC20PaymentTask(
-                fromPaymentAddress = testSendUserPaymentAddress,
-                toPaymentAddress = testReceiverUserPaymentAddress,
-                value = testSendAmount,
+                fromPaymentAddress = testSenderPaymentAddress,
+                toPaymentAddress = testReceiverPaymentAddress,
+                value = testTokenAmount,
                 tokenAddress = testTokenAddress,
-                tokenSymbol = "ETH",
+                tokenSymbol = tokenSymbol,
                 tokenDecimals = tokenDecimals
         ).toBlocking().value()
+
         assertThat(paymentTask, instanceOf(ERC20TokenPaymentTask::class.java))
+        assertThat(paymentTask.tokenSymbol, `is`(tokenSymbol))
+        assertThat(paymentTask.payment.toAddress, `is`(testReceiverPaymentAddress))
+        assertThat(paymentTask.payment.fromAddress, `is`(testSenderPaymentAddress))
+        assertThat(paymentTask.gasPrice.ethAmount, `is`(notNullValue()))
+        assertTokenValue(paymentTask)
+    }
+
+    private fun assertTokenValue(paymentTask: ERC20TokenPaymentTask) {
+        val expectedTokenValue = BigDecimal(testTokenAmount)
+        val actualTokenValue = BigDecimal(paymentTask.tokenValue)
+        val decimalFormat = DecimalFormat("#.00")
+        assertThat(decimalFormat.format(expectedTokenValue), `is`(decimalFormat.format(actualTokenValue)))
+        val actualTokenHexValue = TypeConverter.formatHexString(paymentTask.payment.value, tokenDecimals, EthUtil.ETH_FORMAT)
+        assertThat(decimalFormat.format(BigDecimal(actualTokenHexValue)), `is`(decimalFormat.format(BigDecimal(testTokenAmount))))
     }
 }
