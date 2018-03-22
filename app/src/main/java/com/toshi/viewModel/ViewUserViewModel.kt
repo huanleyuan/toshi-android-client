@@ -142,8 +142,8 @@ class ViewUserViewModel : ViewModel() {
 
     fun submitReview(review: Review) {
         val sub = getRecipientManager()
-                .timestamp
-                .flatMapCompletable { serverTime -> submitReview(review, serverTime) }
+                .getTimestamp()
+                .flatMapCompletable { submitReview(review, it) }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         { this.review.value = true },
