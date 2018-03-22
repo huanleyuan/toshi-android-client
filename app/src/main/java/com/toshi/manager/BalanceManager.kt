@@ -48,9 +48,9 @@ import com.toshi.util.sharedPrefs.SharedPrefs
 import com.toshi.util.sharedPrefs.SharedPrefsInterface
 import com.toshi.view.BaseApplication
 import rx.Completable
+import rx.Scheduler
 import rx.Single
 import rx.Subscription
-import rx.android.schedulers.AndroidSchedulers
 import rx.schedulers.Schedulers
 import rx.subjects.BehaviorSubject
 import java.math.BigDecimal
@@ -61,7 +61,8 @@ class BalanceManager(
         private val ethService: EthereumInterface = EthereumService.getApi(),
         private val currencyService: CurrencyInterface = CurrencyService.getApi(),
         private val balancePrefs: BalancePrefsInterface = BalancePrefs(),
-        private val sharedPrefs: SharedPrefsInterface = SharedPrefs
+        private val sharedPrefs: SharedPrefsInterface = SharedPrefs,
+        private val subscribeOnScheduler: Scheduler = Schedulers.io()
 ) {
     private lateinit var wallet: HDWallet
     private val networks by lazy { Networks.getInstance() }
@@ -86,7 +87,7 @@ class BalanceManager(
         connectivitySub = BaseApplication
                 .get()
                 .isConnectedSubject
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(subscribeOnScheduler)
                 .filter { isConnected -> isConnected }
                 .subscribe(
                         { handleConnectivity() },
@@ -97,7 +98,7 @@ class BalanceManager(
     private fun handleConnectivity() {
         refreshBalance()
         registerEthGcm()
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(subscribeOnScheduler)
                 .subscribe(
                         { },
                         { LogUtil.exception("Error while registering eth gcm", it) }
@@ -106,7 +107,7 @@ class BalanceManager(
 
     fun refreshBalance() {
         getBalance()
-                .observeOn(Schedulers.io())
+                .observeOn(subscribeOnScheduler)
                 .subscribe(
                         { handleNewBalance(it) },
                         { LogUtil.exception("Error while fetching balance", it) }
@@ -122,31 +123,31 @@ class BalanceManager(
     private fun getBalance(): Single<Balance> {
         return getWallet()
                 .flatMap { ethService.getBalance(it.paymentAddress) }
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(subscribeOnScheduler)
     }
 
     fun getERC20Tokens(): Single<ERC20Tokens> {
         return getWallet()
                 .flatMap { ethService.getTokens(it.paymentAddress) }
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(subscribeOnScheduler)
     }
 
     fun getERC20Token(contractAddress: String): Single<ERCToken> {
         return getWallet()
                 .flatMap { ethService.getToken(it.paymentAddress, contractAddress) }
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(subscribeOnScheduler)
     }
 
     fun getERC721Tokens(): Single<ERC721Tokens> {
         return getWallet()
                 .flatMap { ethService.getCollectibles(it.paymentAddress) }
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(subscribeOnScheduler)
     }
 
     fun getERC721Token(contactAddress: String): Single<ERC721TokenWrapper> {
         return getWallet()
                 .flatMap { ethService.getCollectible(it.paymentAddress, contactAddress) }
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(subscribeOnScheduler)
     }
 
     private fun handleNewBalance(balance: Balance) {
@@ -165,16 +166,15 @@ class BalanceManager(
     fun getLocalCurrencyExchangeRate(): Single<ExchangeRate> {
         return getLocalCurrency()
                 .flatMap { fetchLatestExchangeRate(it) }
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(subscribeOnScheduler)
     }
 
-    private fun fetchLatestExchangeRate(code: String) = currencyService.getRates(code)
+    private fun fetchLatestExchangeRate(code: String): Single<ExchangeRate> = currencyService.getRates(code)
 
     fun getCurrencies(): Single<Currencies> {
         return currencyService
                 .currencies
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(subscribeOnScheduler)
     }
 
     fun convertEthToLocalCurrencyString(ethAmount: BigDecimal): Single<String> {
@@ -205,8 +205,7 @@ class BalanceManager(
                 .flatMap { mapToLocalCurrency(it, ethAmount) }
     }
 
-    private fun mapToLocalCurrency(exchangeRate: ExchangeRate,
-                                   ethAmount: BigDecimal): Single<BigDecimal> {
+    private fun mapToLocalCurrency(exchangeRate: ExchangeRate, ethAmount: BigDecimal): Single<BigDecimal> {
         return Single.fromCallable {
             val marketRate = exchangeRate.rate
             marketRate.multiply(ethAmount)
@@ -246,14 +245,14 @@ class BalanceManager(
         return if (networks.onDefaultNetwork()) {
             changeEthBaseUrl(network)
                     .andThen(registerEthGcm())
-                    .subscribeOn(Schedulers.io())
+                    .subscribeOn(subscribeOnScheduler)
                     .doOnCompleted { sharedPrefs.setCurrentNetwork(network) }
         } else GcmUtil
                 .getGcmToken()
                 .flatMapCompletable { unregisterFromEthGcm(it) }
                 .andThen(changeEthBaseUrl(network))
                 .andThen(registerEthGcm())
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(subscribeOnScheduler)
                 .doOnCompleted { sharedPrefs.setCurrentNetwork(network) }
     }
 
@@ -261,7 +260,7 @@ class BalanceManager(
         val currentNetworkId = networks.currentNetwork.id
         return ethService
                 .timestamp
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(subscribeOnScheduler)
                 .flatMapCompletable { unregisterEthGcmWithTimestamp(token, it) }
                 .doOnCompleted { GcmPrefsUtil.setEthGcmTokenSentToServer(currentNetworkId, false) }
     }
@@ -290,8 +289,7 @@ class BalanceManager(
     private fun registerEthGcmToken(token: String): Completable {
         return ethService
                 .timestamp
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
+                .subscribeOn(subscribeOnScheduler)
                 .flatMapCompletable { registerEthGcmWithTimestamp(token, it) }
                 .doOnCompleted { setEthGcmTokenSentToServer() }
                 .doOnError { handleGcmRegisterError(it) }
@@ -330,7 +328,7 @@ class BalanceManager(
             while (wallet == null) Thread.sleep(100)
             wallet
         }
-        .subscribeOn(Schedulers.io())
+        .subscribeOn(subscribeOnScheduler)
         .timeout(20, TimeUnit.SECONDS)
     }
 
