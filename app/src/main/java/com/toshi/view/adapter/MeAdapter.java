@@ -26,7 +26,7 @@ import android.widget.TextView;
 
 import com.toshi.R;
 import com.toshi.exception.CurrencyException;
-import com.toshi.util.SharedPrefsUtil;
+import com.toshi.util.sharedPrefs.SharedPrefs;
 import com.toshi.view.BaseApplication;
 import com.toshi.view.adapter.listeners.OnItemClickListener;
 import com.toshi.view.adapter.viewholder.ClickableViewHolder;
@@ -70,7 +70,7 @@ public class MeAdapter extends RecyclerView.Adapter<MeAdapter.ViewHolder> {
 
     private String getCurrency() {
         try {
-            return SharedPrefsUtil.getCurrency();
+            return SharedPrefs.INSTANCE.getCurrency();
         } catch (CurrencyException e) {
             return "";
         }

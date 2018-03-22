@@ -10,7 +10,7 @@ import com.aurelhubert.ahbottomnavigation.AHBottomNavigation
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationAdapter
 import com.toshi.R
 import com.toshi.extensions.getColorById
-import com.toshi.util.SharedPrefsUtil
+import com.toshi.util.sharedPrefs.SharedPrefs
 import com.toshi.util.SoundManager
 import com.toshi.view.adapter.NavigationAdapter
 import com.toshi.view.fragment.toplevel.BackableTopLevelFragment
@@ -126,7 +126,7 @@ class MainActivity : AppCompatActivity() {
     private fun hideUnreadBadge() = navBar.setNotification("", 1)
 
     private fun handleHasBackedUpPhrase() {
-        if (SharedPrefsUtil.hasBackedUpPhrase()) {
+        if (SharedPrefs.hasBackedUpPhrase()) {
             hideAlertBadge()
         } else {
             showAlertBadge()
@@ -138,14 +138,14 @@ class MainActivity : AppCompatActivity() {
     private fun showAlertBadge() = navBar.setNotification("!", 4)
 
     private fun showFirstRunDialog() {
-        if (SharedPrefsUtil.hasLoadedApp()) return
+        if (SharedPrefs.hasLoadedApp()) return
 
         val builder = AlertDialog.Builder(this, R.style.AlertDialogCustom)
         builder.setTitle(R.string.beta_warning_title)
                 .setMessage(R.string.init_warning_message)
                 .setPositiveButton(R.string.ok) { dialog, _ -> dialog.dismiss() }
         builder.create().show()
-        SharedPrefsUtil.setHasLoadedApp()
+        SharedPrefs.setHasLoadedApp()
     }
 
     override fun onSaveInstanceState(outState: Bundle?) {

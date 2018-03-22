@@ -37,7 +37,7 @@ import com.toshi.util.BuildTypes;
 import com.toshi.util.DialogUtil;
 import com.toshi.util.logging.LogUtil;
 import com.toshi.util.QrCode;
-import com.toshi.util.SharedPrefsUtil;
+import com.toshi.util.sharedPrefs.SharedPrefs;
 import com.toshi.view.BaseApplication;
 import com.toshi.view.activity.BackupPhraseInfoActivity;
 import com.toshi.view.activity.DepositActivity;
@@ -79,7 +79,7 @@ public class DepositPresenter implements Presenter<DepositActivity> {
     }
 
     private void showWarningDialogIfNotBackedUp() {
-        if (SharedPrefsUtil.hasBackedUpPhrase()) return;
+        if (SharedPrefs.INSTANCE.hasBackedUpPhrase()) return;
 
         final AlertDialog.Builder builder =
                 DialogUtil.getBaseDialog(

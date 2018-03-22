@@ -20,7 +20,7 @@ package com.toshi.model.local;
 import android.support.annotation.Nullable;
 
 import com.toshi.R;
-import com.toshi.util.SharedPrefsUtil;
+import com.toshi.util.sharedPrefs.SharedPrefs;
 import com.toshi.view.BaseApplication;
 
 import java.util.ArrayList;
@@ -115,6 +115,6 @@ public class Networks {
     }
 
     private @Nullable String getCurrentNetworkId() {
-        return SharedPrefsUtil.getCurrentNetworkId();
+        return SharedPrefs.INSTANCE.getCurrentNetworkId();
     }
 }

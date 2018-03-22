@@ -22,7 +22,7 @@ import android.content.Intent;
 import android.net.Uri;
 
 import com.toshi.util.logging.LogUtil;
-import com.toshi.util.SharedPrefsUtil;
+import com.toshi.util.sharedPrefs.SharedPrefs;
 import com.toshi.view.BaseApplication;
 import com.toshi.view.activity.LandingActivity;
 import com.toshi.view.activity.MainActivity;
@@ -57,7 +57,7 @@ public class SplashPresenter implements Presenter<SplashActivity> {
     }
 
     private void redirect() {
-        final boolean hasSignedOut = SharedPrefsUtil.hasSignedOut();
+        final boolean hasSignedOut = SharedPrefs.INSTANCE.hasSignedOut();
 
         if (hasSignedOut) {
             goToLandingActivity();
@@ -83,7 +83,7 @@ public class SplashPresenter implements Presenter<SplashActivity> {
     }
 
     private void goToAnotherActivity() {
-        SharedPrefsUtil.setSignedIn();
+        SharedPrefs.INSTANCE.setSignedIn();
 
         final PendingIntent nextIntent = this.activity.getIntent().getParcelableExtra(SplashActivity.EXTRA__NEXT_INTENT);
         if (nextIntent != null) {

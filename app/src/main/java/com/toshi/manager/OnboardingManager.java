@@ -7,7 +7,7 @@ import com.toshi.model.local.User;
 import com.toshi.model.network.UserSearchResults;
 import com.toshi.util.BuildTypes;
 import com.toshi.util.logging.LogUtil;
-import com.toshi.util.SharedPrefsUtil;
+import com.toshi.util.sharedPrefs.SharedPrefs;
 import com.toshi.view.BaseApplication;
 
 import rx.Completable;
@@ -19,7 +19,7 @@ public class OnboardingManager {
     private static final String DEBUG_ONBOARDING_BOT_NAME = "spambot7777";
 
     public Completable tryTriggerOnboarding() {
-        if (SharedPrefsUtil.hasOnboarded()) return Completable.complete();
+        if (SharedPrefs.INSTANCE.hasOnboarded()) return Completable.complete();
 
         return IdService.getApi()
                 .searchByUsername(getOnboardingBotName())
@@ -46,7 +46,7 @@ public class OnboardingManager {
                 .get()
                 .getUserManager()
                 .getCurrentUser()
-                .doOnSuccess(__ -> SharedPrefsUtil.setHasOnboarded(true))
+                .doOnSuccess(__ -> SharedPrefs.INSTANCE.setHasOnboarded(true))
                 .subscribe(
                         currentUser -> sendInitMessage(currentUser, onboardingBot),
                         throwable -> LogUtil.exception("Error during sending onboarding message to bot", throwable)

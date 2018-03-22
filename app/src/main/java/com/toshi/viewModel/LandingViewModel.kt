@@ -5,7 +5,7 @@ import android.arch.lifecycle.ViewModel
 import com.toshi.R
 import com.toshi.manager.OnboardingManager
 import com.toshi.model.local.Conversation
-import com.toshi.util.SharedPrefsUtil
+import com.toshi.util.sharedPrefs.SharedPrefs
 import com.toshi.util.SingleLiveEvent
 import com.toshi.util.logging.LogUtil
 import com.toshi.view.BaseApplication
@@ -69,13 +69,13 @@ class LandingViewModel : ViewModel() {
     private fun handleOnboardingSuccess(botId: String) {
         onboardingBotId.value = botId
         isLoading.value = false
-        SharedPrefsUtil.setSignedIn()
+        SharedPrefs.setSignedIn()
     }
 
     private fun handleOnboardingFailure(throwable: Throwable) {
         onboardingError.value = Unit
         isLoading.value = false
-        SharedPrefsUtil.setSignedIn()
+        SharedPrefs.setSignedIn()
         LogUtil.exception("Error while waiting for onboarding bot response $throwable")
     }
 

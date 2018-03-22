@@ -26,7 +26,7 @@ import com.toshi.model.network.Currencies;
 import com.toshi.model.network.Currency;
 import com.toshi.util.CurrencyComparator;
 import com.toshi.util.logging.LogUtil;
-import com.toshi.util.SharedPrefsUtil;
+import com.toshi.util.sharedPrefs.SharedPrefs;
 import com.toshi.view.BaseApplication;
 import com.toshi.view.activity.CurrencyActivity;
 import com.toshi.view.adapter.CurrencyAdapter;
@@ -100,7 +100,7 @@ public class CurrencyPresenter implements Presenter<CurrencyActivity> {
     }
 
     private void handleCurrencyClicked(final Currency currency) {
-        SharedPrefsUtil.saveCurrency(currency.getCode());
+        SharedPrefs.INSTANCE.saveCurrency(currency.getCode());
         BaseApplication.get().getBalanceManager().refreshBalance();
         this.activity.finish();
     }

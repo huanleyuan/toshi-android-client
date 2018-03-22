@@ -23,7 +23,7 @@ import android.view.View;
 
 import com.toshi.crypto.HDWallet;
 import com.toshi.util.logging.LogUtil;
-import com.toshi.util.SharedPrefsUtil;
+import com.toshi.util.sharedPrefs.SharedPrefs;
 import com.toshi.view.BaseApplication;
 import com.toshi.view.activity.BackupPhraseVerifyActivity;
 import com.toshi.view.activity.MainActivity;
@@ -88,7 +88,7 @@ public class BackupPhraseVerifyPresenter implements Presenter<BackupPhraseVerify
     }
 
     private void handleFinishedListener() {
-        SharedPrefsUtil.setHasBackedUpPhrase();
+        SharedPrefs.INSTANCE.setHasBackedUpPhrase();
 
         final Intent intent = new Intent(this.activity, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);

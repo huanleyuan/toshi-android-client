@@ -42,7 +42,7 @@ import com.toshi.model.sofa.SofaAdapters;
 import com.toshi.model.sofa.SofaMessage;
 import com.toshi.model.sofa.SofaType;
 import com.toshi.util.logging.LogUtil;
-import com.toshi.util.SharedPrefsUtil;
+import com.toshi.util.sharedPrefs.SharedPrefs;
 import com.toshi.view.BaseApplication;
 import com.toshi.view.notification.ChatNotificationManager;
 
@@ -59,7 +59,8 @@ public class GcmMessageReceiver extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(final RemoteMessage message) {
-        if (SharedPrefsUtil.hasSignedOut()) return;
+        if (SharedPrefs.INSTANCE.hasSignedOut()) return;
+
 
         tryInitApp()
         .subscribe(

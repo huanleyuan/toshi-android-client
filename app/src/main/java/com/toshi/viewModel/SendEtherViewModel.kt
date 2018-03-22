@@ -28,7 +28,7 @@ import com.toshi.model.network.Balance
 import com.toshi.model.network.ExchangeRate
 import com.toshi.util.CurrencyUtil
 import com.toshi.util.EthUtil
-import com.toshi.util.SharedPrefsUtil
+import com.toshi.util.sharedPrefs.SharedPrefs
 import com.toshi.util.logging.LogUtil
 import com.toshi.view.BaseApplication
 import rx.android.schedulers.AndroidSchedulers
@@ -121,10 +121,10 @@ class SendEtherViewModel : ViewModel() {
         }
     }
 
-    fun getFiatCurrencyCode(): String = SharedPrefsUtil.getCurrency()
+    fun getFiatCurrencyCode(): String = SharedPrefs.getCurrency()
 
     fun getFiatCurrencySymbol(): String {
-        val currency = SharedPrefsUtil.getCurrency()
+        val currency = SharedPrefs.getCurrency()
         return CurrencyUtil.getSymbol(currency)
     }
 

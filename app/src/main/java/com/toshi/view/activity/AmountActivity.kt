@@ -32,15 +32,23 @@ import com.toshi.extensions.setActivityResultAndFinish
 import com.toshi.extensions.toast
 import com.toshi.model.local.Networks
 import com.toshi.util.BuildTypes
+import com.toshi.util.CurrencyUtil
+import com.toshi.util.EthUtil
 import com.toshi.util.LocaleUtil
 import com.toshi.util.OnSingleClickListener
 import com.toshi.util.PaymentType
-import com.toshi.util.SharedPrefsUtil
-import com.toshi.util.CurrencyUtil
-import com.toshi.util.EthUtil
+import com.toshi.util.sharedPrefs.SharedPrefs
 import com.toshi.view.adapter.AmountInputAdapter
 import com.toshi.viewModel.AmountViewModel
-import kotlinx.android.synthetic.main.activity_amount.*
+import kotlinx.android.synthetic.main.activity_amount.amountInputView
+import kotlinx.android.synthetic.main.activity_amount.btnContinue
+import kotlinx.android.synthetic.main.activity_amount.closeButton
+import kotlinx.android.synthetic.main.activity_amount.ethValue
+import kotlinx.android.synthetic.main.activity_amount.localCurrencyCode
+import kotlinx.android.synthetic.main.activity_amount.localCurrencySymbol
+import kotlinx.android.synthetic.main.activity_amount.localValueView
+import kotlinx.android.synthetic.main.activity_amount.networkView
+import kotlinx.android.synthetic.main.activity_amount.toolbarTitle
 import java.math.BigDecimal
 
 class AmountActivity : AppCompatActivity() {
@@ -178,7 +186,7 @@ class AmountActivity : AppCompatActivity() {
 
     private fun setCurrency() {
         try {
-            val currency = SharedPrefsUtil.getCurrency()
+            val currency = SharedPrefs.getCurrency()
             val currencyCode = CurrencyUtil.getCode(currency)
             val currencySymbol = CurrencyUtil.getSymbol(currency)
             localCurrencySymbol.text = currencySymbol

@@ -25,7 +25,7 @@ import com.toshi.model.network.ServerTime
 import com.toshi.model.network.UserDetails
 import com.toshi.util.FileNames
 import com.toshi.util.FileUtil
-import com.toshi.util.SharedPrefsUtil
+import com.toshi.util.sharedPrefs.SharedPrefs
 import com.toshi.util.logging.LogUtil
 import com.toshi.view.BaseApplication
 import okhttp3.MediaType
@@ -88,7 +88,7 @@ class UserManager {
         return when {
             userNeedsToRegister() -> registerNewUser()
             userNeedsToMigrate() -> migrateUser()
-            SharedPrefsUtil.shouldForceUserUpdate() -> forceUpdateUser()
+            SharedPrefs.shouldForceUserUpdate() -> forceUpdateUser()
             else -> fetchAndUpdateUser()
         }
     }
@@ -118,7 +118,7 @@ class UserManager {
 
     private fun registerNewUserWithTimestamp(serverTime: ServerTime): Single<User> {
         val userDetails = UserDetails().setPaymentAddress(wallet.paymentAddress)
-        SharedPrefsUtil.setForceUserUpdate(false)
+        SharedPrefs.setForceUserUpdate(false)
         return IdService.getApi()
                 .registerUser(userDetails, serverTime.get())
     }
@@ -173,14 +173,14 @@ class UserManager {
     }
 
     private fun migrateUser(): Completable {
-        SharedPrefsUtil.setWasMigrated(true)
+        SharedPrefs.setWasMigrated(true)
         return forceUpdateUser()
     }
 
     private fun forceUpdateUser(): Completable {
         val ud = UserDetails().setPaymentAddress(wallet.paymentAddress)
         return updateUser(ud)
-                .doOnSuccess { SharedPrefsUtil.setForceUserUpdate(false) }
+                .doOnSuccess { SharedPrefs.setForceUserUpdate(false) }
                 .doOnError { LogUtil.exception("Error while updating user while initiating $it") }
                 .toCompletable()
                 .onErrorComplete()

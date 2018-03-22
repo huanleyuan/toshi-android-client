@@ -37,7 +37,7 @@ import com.toshi.extensions.toast
 import com.toshi.model.local.User
 import com.toshi.model.network.Balance
 import com.toshi.util.ImageUtil
-import com.toshi.util.SharedPrefsUtil
+import com.toshi.util.sharedPrefs.SharedPrefs
 import com.toshi.view.activity.AdvancedSettingsActivity
 import com.toshi.view.activity.BackupPhraseInfoActivity
 import com.toshi.view.activity.BalanceActivity
@@ -101,7 +101,7 @@ class MeFragment : TopLevelFragment() {
     }
 
     private fun setSecurityState() {
-        if (SharedPrefsUtil.hasBackedUpPhrase()) {
+        if (SharedPrefs.hasBackedUpPhrase()) {
             checkboxBackupPhrase.isChecked = true
             securityStatus.visibility = View.GONE
         }
@@ -164,7 +164,7 @@ class MeFragment : TopLevelFragment() {
 
     private fun showDialog(balance: Balance) {
         val isWalletEmpty = balance.unconfirmedBalance.compareTo(BigInteger.ZERO) == 0
-        val shouldCancelSignOut = !SharedPrefsUtil.hasBackedUpPhrase() && !isWalletEmpty
+        val shouldCancelSignOut = !SharedPrefs.hasBackedUpPhrase() && !isWalletEmpty
         if (shouldCancelSignOut) {
             showSignOutCancelledDialog()
         } else {

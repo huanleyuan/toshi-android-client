@@ -26,7 +26,7 @@ import com.toshi.crypto.signal.SignalPreferences;
 import com.toshi.manager.store.DbMigration;
 import com.toshi.util.ImageUtil;
 import com.toshi.util.logging.LogUtil;
-import com.toshi.util.SharedPrefsUtil;
+import com.toshi.util.sharedPrefs.SharedPrefs;
 import com.toshi.view.BaseApplication;
 
 import java.util.concurrent.ExecutorService;
@@ -84,7 +84,7 @@ public class ToshiManager {
         return new HDWallet()
                 .createWallet()
                 .doOnSuccess(this::setWallet)
-                .doOnSuccess(__ -> SharedPrefsUtil.setHasOnboarded(false))
+                .doOnSuccess(__ -> SharedPrefs.INSTANCE.setHasOnboarded(false))
                 .flatMapCompletable(__ -> initManagers())
                 .doOnError(__ -> signOut())
                 .doOnError(throwable -> LogUtil.exception("Error while initiating new wallet", throwable))
@@ -245,7 +245,7 @@ public class ToshiManager {
     }
 
     private void setSignedOutAndClearUserPrefs() {
-        SharedPrefsUtil.setSignedOut();
-        SharedPrefsUtil.clear();
+        SharedPrefs.INSTANCE.setSignedOut();
+        SharedPrefs.INSTANCE.clear();
     }
 }
