@@ -30,6 +30,7 @@ import android.provider.MediaStore
 import android.support.v4.content.FileProvider
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
+import android.view.View
 import android.webkit.ValueCallback
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -196,6 +197,7 @@ class LollipopWebViewActivity : AppCompatActivity() {
                 this,
                 { webViewModel.updateToolbar() },
                 { webViewModel.url.postValue(it) },
+                { webview.visibility = View.INVISIBLE },
                 { onPageCommitVisible(it) }
         )
         val chromeWebClient = ToshiChromeWebViewClient(this::handleFileChooserCallback)

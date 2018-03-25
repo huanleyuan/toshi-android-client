@@ -19,6 +19,7 @@ package com.toshi.view.activity.webView
 
 import android.annotation.TargetApi
 import android.content.Context
+import android.graphics.Bitmap
 import android.os.Build
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -41,11 +42,17 @@ class ToshiWebClient(
         private val context: Context,
         private val updateListener: () -> Unit,
         private val updateUrl: (String) -> Unit,
+        private val onPageChangeListener: () -> Unit,
         private val pageCommitVisibleListener: (String?) -> Unit
 ) : WebViewClient() {
 
     private val toshiManager by lazy { BaseApplication.get().toshiManager }
     private val httpClient by lazy { OkHttpClient.Builder().cookieJar(WebViewCookieJar()).build() }
+
+    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+        super.onPageStarted(view, url, favicon)
+        onPageChangeListener.invoke()
+    }
 
     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
         if (request == null || view == null) return false
