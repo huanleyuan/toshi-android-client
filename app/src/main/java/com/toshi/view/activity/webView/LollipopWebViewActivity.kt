@@ -54,6 +54,7 @@ import kotlinx.android.synthetic.main.activity_lollipop_view_view.input
 import kotlinx.android.synthetic.main.activity_lollipop_view_view.progressBar
 import kotlinx.android.synthetic.main.activity_lollipop_view_view.webview
 import kotlinx.android.synthetic.main.activity_lollipop_view_view.searchDapps
+import kotlinx.android.synthetic.main.activity_lollipop_view_view.swipeToRefresh
 import kotlinx.android.synthetic.main.view_address_bar_input.backButton
 import kotlinx.android.synthetic.main.view_address_bar_input.forwardButton
 import kotlinx.android.synthetic.main.view_address_bar_input.view.userInput
@@ -114,6 +115,7 @@ class LollipopWebViewActivity : AppCompatActivity() {
         input.onExitClickedListener = { handleExitClicked() }
         input.onFocusChangedListener = { onAddressBarFocusChanged(it) }
         input.onTextChangedListener = { showSearchUI(it) }
+        swipeToRefresh.setOnRefreshListener { webview.reload() }
     }
 
     private fun handleBackButtonClicked() {
@@ -204,6 +206,8 @@ class LollipopWebViewActivity : AppCompatActivity() {
     private fun onPageCommitVisible(url: String?) {
         if (url != null) input.text = url
         updateToolbarNavigation()
+        swipeToRefresh.isRefreshing = false
+        webview.visibility = View.VISIBLE
     }
 
     private fun initObservers() {

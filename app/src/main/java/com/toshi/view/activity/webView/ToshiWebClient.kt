@@ -191,6 +191,6 @@ class ToshiWebClient(
 
     override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
         super.doUpdateVisitedHistory(view, url, isReload)
-        updateListener()
+        if (!isReload) updateListener()
     }
 }
