@@ -193,19 +193,19 @@ class LollipopWebViewActivity : AppCompatActivity() {
         val address = webViewModel.tryGetAddress()
         sofaHostWrapper = SofaHostWrapper(this, webview, address)
         webview.addJavascriptInterface(sofaHostWrapper.sofaHost, "SOFAHost")
-        webview.webViewClient = ToshiWebClient(
-                this,
-                { webViewModel.updateToolbar() },
-                { webViewModel.url.postValue(it) },
-                { webview.visibility = View.INVISIBLE },
-                { onPageCommitVisible(it) }
-        )
+        webview.webViewClient = ToshiWebClient(this)
+                .apply {
+                    onHistoryUpdatedListener = webViewModel::updateToolbar
+                    onUrlUpdatedListener = { webViewModel.url.postValue(it) }
+                    onPageLoadingStartedListener = { webview.visibility = View.INVISIBLE }
+                    onPageLoadedListener = { onPageLoaded(it) }
+                }
         val chromeWebClient = ToshiChromeWebViewClient(this::handleFileChooserCallback)
         chromeWebClient.progressListener = { progressBar.setProgress(it) }
         webview.webChromeClient = chromeWebClient
     }
 
-    private fun onPageCommitVisible(url: String?) {
+    private fun onPageLoaded(url: String?) {
         if (url != null) input.text = url
         updateToolbarNavigation()
         swipeToRefresh.isRefreshing = false

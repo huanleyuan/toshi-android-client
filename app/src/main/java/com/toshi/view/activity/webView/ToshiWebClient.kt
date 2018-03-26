@@ -39,19 +39,20 @@ import java.net.UnknownHostException
 import javax.net.ssl.SSLPeerUnverifiedException
 
 class ToshiWebClient(
-        private val context: Context,
-        private val updateListener: () -> Unit,
-        private val updateUrl: (String) -> Unit,
-        private val onPageChangeListener: () -> Unit,
-        private val pageCommitVisibleListener: (String?) -> Unit
+        private val context: Context
 ) : WebViewClient() {
+
+    var onHistoryUpdatedListener: (() -> Unit)? = null
+    var onUrlUpdatedListener: ((String) -> Unit)? = null
+    var onPageLoadingStartedListener: (() -> Unit)? = null
+    var onPageLoadedListener: ((String?) -> Unit)? = null
 
     private val toshiManager by lazy { BaseApplication.get().toshiManager }
     private val httpClient by lazy { OkHttpClient.Builder().cookieJar(WebViewCookieJar()).build() }
 
     override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
         super.onPageStarted(view, url, favicon)
-        onPageChangeListener.invoke()
+        onPageLoadingStartedListener?.invoke()
     }
 
     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
@@ -111,7 +112,8 @@ class ToshiWebClient(
 
     private fun handleRedirectOnOldApiVersions(response: Response) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            updateUrl(response.networkResponse()?.request()?.url().toString())
+            val url = response.networkResponse()?.request()?.url()?.toString()
+            if (url != null) onUrlUpdatedListener?.invoke(url)
         }
     }
 
@@ -193,11 +195,11 @@ class ToshiWebClient(
 
     override fun onPageCommitVisible(view: WebView?, url: String?) {
         super.onPageCommitVisible(view, url)
-        pageCommitVisibleListener(url)
+        onPageLoadedListener?.invoke(url)
     }
 
     override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
         super.doUpdateVisitedHistory(view, url, isReload)
-        if (!isReload) updateListener()
+        if (!isReload) onHistoryUpdatedListener?.invoke()
     }
 }
