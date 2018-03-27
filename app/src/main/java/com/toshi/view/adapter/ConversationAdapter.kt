@@ -14,16 +14,45 @@ import com.toshi.util.logging.LogUtil
 import com.toshi.view.BaseApplication
 import com.toshi.view.adapter.listeners.OnItemClickListener
 import java.io.IOException
+import kotlin.reflect.KClass
 
 class ConversationAdapter(
         private val onItemClickListener: (Conversation) -> Unit,
         private val onItemLongClickListener: (Conversation) -> Unit
-    ): RecyclerView.Adapter<ThreadViewHolder>() {
+    ): RecyclerView.Adapter<ThreadViewHolder>(), CompoundableAdapter {
 
-    private lateinit var conversations: List<Conversation>
+    // COMPOUNDABLE ADAPTER OVERRIDES
+
+    override fun genericBindViewHolder(viewHolder: RecyclerView.ViewHolder, position: Int) {
+        val typedHolder = viewHolder as? ThreadViewHolder ?: throw AssertionError("This is not the right type!")
+        onBindViewHolder(typedHolder, position)
+    }
+
+    override fun genericCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return onCreateViewHolder(parent, viewType)
+    }
+
+    override fun genericItemCount(): Int {
+        return itemCount
+    }
+
+    // MAIN CLASS STUFF
+
+    private lateinit var conversations: MutableList<Conversation>
 
     fun setConversations(conversations: List<Conversation>) {
-        this.conversations = conversations
+        this.conversations = conversations.toMutableList()
+        notifyDataSetChanged()
+    }
+
+    fun addConversation(conversation: Conversation) {
+        conversations.add(conversation)
+        notifyDataSetChanged()
+    }
+
+    fun removeConversation(conversation: Conversation) {
+        conversations.remove(conversation)
+        notifyDataSetChanged()
     }
 
 

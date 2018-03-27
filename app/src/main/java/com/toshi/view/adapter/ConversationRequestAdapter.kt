@@ -34,7 +34,22 @@ class ConversationRequestAdapter(
         private val onItemCLickListener: (Conversation) -> Unit,
         private val onAcceptClickListener: (Conversation) -> Unit,
         private val onRejectClickListener: (Conversation) -> Unit
-) : RecyclerView.Adapter<ConversationRequestViewHolder>() {
+) : RecyclerView.Adapter<ConversationRequestViewHolder>(), CompoundableAdapter {
+
+    // COMPOUNDABLE ADAPTER OVERRIDES
+
+    override fun genericBindViewHolder(viewHolder: RecyclerView.ViewHolder, position: Int) {
+        val typedHolder = viewHolder as? ConversationRequestViewHolder ?: throw AssertionError("This is not the right type!")
+        onBindViewHolder(typedHolder, position)
+    }
+
+    override fun genericCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return onCreateViewHolder(parent, viewType)
+    }
+
+    override fun genericItemCount(): Int {
+        return itemCount
+    }
 
     private val conversations = mutableListOf<Conversation>()
     lateinit var localUser: User

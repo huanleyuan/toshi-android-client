@@ -29,23 +29,18 @@ import android.support.v7.widget.helper.ItemTouchHelper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Adapter
 import com.toshi.R
 import com.toshi.extensions.getColorById
+import com.toshi.extensions.isEmpty
 import com.toshi.extensions.isVisible
 import com.toshi.extensions.startActivity
 import com.toshi.model.local.Conversation
 import com.toshi.model.local.ConversationInfo
 import com.toshi.view.activity.ChatActivity
-import com.toshi.view.activity.ConversationRequestActivity
 import com.toshi.view.activity.ConversationSetupActivity
-import com.toshi.view.adapter.AdapterType
 import com.toshi.view.adapter.CompoundAdapter
 import com.toshi.view.adapter.ConversationAdapter
 import com.toshi.view.adapter.ConversationRequestAdapter
-import com.toshi.view.adapter.RecentAdapter
-import com.toshi.view.adapter.listeners.OnItemClickListener
-import com.toshi.view.adapter.listeners.OnUpdateListener
 import com.toshi.view.adapter.viewholder.ThreadViewHolder
 import com.toshi.view.fragment.DialogFragment.ConversationOptionsDialogFragment
 import com.toshi.viewModel.RecentViewModel
@@ -66,7 +61,9 @@ class RecentFragment : TopLevelFragment() {
     override fun getFragmentTag() = TAG
 
     private lateinit var viewModel: RecentViewModel
-    private lateinit var recentAdapter: RecentAdapter
+    private lateinit var recentAdapter: CompoundAdapter
+    private lateinit var conversationRequestAdapter: ConversationRequestAdapter
+    private lateinit var conversationAdapter: ConversationAdapter
     private var scrollPosition = 0
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -107,32 +104,32 @@ class RecentFragment : TopLevelFragment() {
 
     private fun initRecentAdapter() {
 
-        val conversationAdapter = ConversationAdapter(
+        conversationAdapter = ConversationAdapter(
                 { conversation -> startActivity<ChatActivity> { putExtra(ChatActivity.EXTRA__THREAD_ID, conversation.threadId) }},
                 { conversation -> viewModel.showConversationOptionsDialog(conversation.threadId) }
         )
-        val conversationRequestAdapter = ConversationRequestAdapter(
+        conversationRequestAdapter = ConversationRequestAdapter(
                 { conversation -> startActivity<ChatActivity> { putExtra(ChatActivity.EXTRA__THREAD_ID, conversation.threadId)}},
                 { conversation -> handleAcceptedConversation(conversation) },
                 { conversation -> handleUnacceptedConversation(conversation) }
         )
 
 
-        val compoundAdapter = CompoundAdapter(listOf(conversationAdapter, conversationRequestAdapter))
+        recentAdapter = CompoundAdapter(listOf(conversationRequestAdapter, conversationAdapter))
 
 
-        recentAdapter = RecentAdapter()
-                .apply {
-                    onItemClickListener = OnItemClickListener {
-                        startActivity<ChatActivity> { putExtra(ChatActivity.EXTRA__THREAD_ID, it.threadId) }
-                    }
-                    onItemLongClickListener = OnItemClickListener {
-                        viewModel.showConversationOptionsDialog(it.threadId)
-                    }
-                    onRequestsClickListener = OnUpdateListener {
-                        startActivity<ConversationRequestActivity>()
-                    }
-                }
+//        recentAdapter = RecentAdapter()
+//                .apply {
+//                    onItemClickListener = OnItemClickListener {
+//                        startActivity<ChatActivity> { putExtra(ChatActivity.EXTRA__THREAD_ID, it.threadId) }
+//                    }
+//                    onItemLongClickListener = OnItemClickListener {
+//                        viewModel.showConversationOptionsDialog(it.threadId)
+//                    }
+//                    onRequestsClickListener = OnUpdateListener {
+//                        startActivity<ConversationRequestActivity>()
+//                    }
+//                }
 
         recents.apply {
             layoutManager = LinearLayoutManager(context)
@@ -163,18 +160,19 @@ class RecentFragment : TopLevelFragment() {
     }
 
     private fun handleConversations(acceptedConversations: List<Conversation>, unacceptedConversation: List<Conversation>) {
-        recentAdapter.setUnacceptedConversations(unacceptedConversation)
-        recentAdapter.setConversations(acceptedConversations)
+        conversationRequestAdapter.setConversations(unacceptedConversation)
+        conversationAdapter.setConversations(acceptedConversations)
         updateViewState()
     }
 
     private fun handleAcceptedConversation(updatedConversation: Conversation) {
-        recentAdapter.updateAcceptedConversation(updatedConversation)
+        conversationRequestAdapter.remove(updatedConversation)
+        conversationAdapter.addConversation(updatedConversation)
         updateViewState()
     }
 
     private fun handleUnacceptedConversation(updatedConversation: Conversation) {
-        recentAdapter.updateUnacceptedConversation(updatedConversation)
+        conversationRequestAdapter.remove(updatedConversation)
         updateViewState()
     }
 
@@ -214,8 +212,8 @@ class RecentFragment : TopLevelFragment() {
     }
 
     private fun updateEmptyState() {
-        val isAdapterEmpty = recentAdapter.itemCount == 0
-        val isAcceptedConversationsEmpty = recentAdapter.isAcceptedConversationsEmpty
+        val isAdapterEmpty = recentAdapter.isEmpty()
+        val isAcceptedConversationsEmpty = conversationAdapter.isEmpty()
 
         val params = recents.layoutParams
         params.height = if (isAcceptedConversationsEmpty) ViewGroup.LayoutParams.WRAP_CONTENT else ViewGroup.LayoutParams.MATCH_PARENT
@@ -226,8 +224,9 @@ class RecentFragment : TopLevelFragment() {
     }
 
     private fun updateDividers() {
+        val isUnacceptedEmpty = conversationRequestAdapter.isEmpty()
         val dividerStartPosition =
-                if (recentAdapter.isUnacceptedConversationsEmpty) NO_MESSAGE_REQUESTS_START_POSITION
+                if (isUnacceptedEmpty) NO_MESSAGE_REQUESTS_START_POSITION
                 else MESSAGE_REQUESTS_START_POSITION
         recents.setDividerStartPosition(dividerStartPosition)
     }
