@@ -31,7 +31,6 @@ import com.toshi.view.adapter.viewholder.ConversationRequestViewHolder
 import java.io.IOException
 
 class ConversationRequestAdapter(
-        private val parentAdapter: CompoundAdapter? = null,
         private val onItemCLickListener: (Conversation) -> Unit,
         private val onAcceptClickListener: (Conversation) -> Unit,
         private val onRejectClickListener: (Conversation) -> Unit
@@ -56,7 +55,6 @@ class ConversationRequestAdapter(
 
         conversations[index] = conversation
         notifyItemChanged(index)
-        parentAdapter?.notifyItemChanged(this, index)
     }
 
     fun remove(conversation: Conversation) {

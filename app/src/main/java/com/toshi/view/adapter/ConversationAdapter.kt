@@ -16,18 +16,23 @@ import com.toshi.view.adapter.listeners.OnItemClickListener
 import java.io.IOException
 
 class ConversationAdapter(
-        var sectionParent: CompoundAdapter?,
-        var conversations: List<Conversation>,
-        private val onItemClickListener: OnItemClickListener<Conversation>,
-        private val onItemLongClickListener: OnItemClickListener<Conversation>
+        private val onItemClickListener: (Conversation) -> Unit,
+        private val onItemLongClickListener: (Conversation) -> Unit
     ): RecyclerView.Adapter<ThreadViewHolder>() {
+
+    private lateinit var conversations: List<Conversation>
+
+    fun setConversations(conversations: List<Conversation>) {
+        this.conversations = conversations
+    }
+
 
     override fun getItemCount(): Int {
         return conversations.size
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ThreadViewHolder {
-        val itemView = LayoutInflater.from(parent.context).inflate(R.layout.list_item__recent, parent, false);
+        val itemView = LayoutInflater.from(parent.context).inflate(R.layout.list_item__recent, parent, false)
         return ThreadViewHolder(itemView)
     }
 
@@ -99,6 +104,5 @@ class ConversationAdapter(
         conversations = updatedConversations.filter { !it.isRecipientInvalid }
 
         notifyDataSetChanged()
-        sectionParent?.notifyDataSetChanged()
     }
 }

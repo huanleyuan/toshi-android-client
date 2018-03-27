@@ -30,14 +30,20 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.toshi.R
+import com.toshi.R.id.emptyState
+import com.toshi.R.id.recents
 import com.toshi.extensions.getColorById
 import com.toshi.extensions.isVisible
 import com.toshi.extensions.startActivity
+import com.toshi.extensions.startActivityAndFinish
 import com.toshi.model.local.Conversation
 import com.toshi.model.local.ConversationInfo
 import com.toshi.view.activity.ChatActivity
 import com.toshi.view.activity.ConversationRequestActivity
 import com.toshi.view.activity.ConversationSetupActivity
+import com.toshi.view.adapter.CompoundAdapter
+import com.toshi.view.adapter.ConversationAdapter
+import com.toshi.view.adapter.ConversationRequestAdapter
 import com.toshi.view.adapter.RecentAdapter
 import com.toshi.view.adapter.listeners.OnItemClickListener
 import com.toshi.view.adapter.listeners.OnUpdateListener
@@ -101,6 +107,21 @@ class RecentFragment : TopLevelFragment() {
     }
 
     private fun initRecentAdapter() {
+
+        val conversationAdapter = ConversationAdapter(
+                { conversation -> startActivity<ChatActivity> { putExtra(ChatActivity.EXTRA__THREAD_ID, conversation.threadId) }},
+                { conversation -> viewModel.showConversationOptionsDialog(conversation.threadId) }
+        )
+        val conversationRequestAdapter = ConversationRequestAdapter(
+                { conversation -> startActivity<ChatActivity> { putExtra(ChatActivity.EXTRA__THREAD_ID, conversation.threadId)}},
+                { conversation -> handleAcceptedConversation(conversation) },
+                { conversation -> handleUnacceptedConversation(conversation) }
+        )
+
+
+        val compoundAdapter = CompoundAdapter(listOf(conversationAdapter, conversationRequestAdapter))
+
+
         recentAdapter = RecentAdapter()
                 .apply {
                     onItemClickListener = OnItemClickListener {

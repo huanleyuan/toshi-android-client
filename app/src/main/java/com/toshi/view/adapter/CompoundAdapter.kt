@@ -7,8 +7,8 @@ import android.view.ViewGroup
 An adapter which takes an array of adapters, so logic for things with different types can be split into
 individual adapters.
 */
-public class CompoundAdapter(
-        var adapters: List<RecyclerView.Adapter<RecyclerView.ViewHolder>>
+class CompoundAdapter<T: RecyclerView.ViewHolder, U: RecyclerView.Adapter<T>>(
+        var adapters: List<U>
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private fun totalItemsBeforeSection(sectionIndex: Int): Int {
@@ -26,20 +26,20 @@ public class CompoundAdapter(
         return -1
     }
 
-    private fun compoundIndexOfItem(adapter: RecyclerView.Adapter<RecyclerView.ViewHolder>, positionInAdapter: Int): Int {
+    private fun compoundIndexOfItem(adapter: U, positionInAdapter: Int): Int {
         val sectionIndex = adapters.indexOf(adapter)
         val previousItems = totalItemsBeforeSection(sectionIndex)
         return previousItems + positionInAdapter
     }
 
-    private fun sectionIndexOfItem(adapter: RecyclerView.Adapter<RecyclerView.ViewHolder>, compoundIndex: Int): Int {
+    private fun sectionIndexOfItem(adapter: U, compoundIndex: Int): Int {
         val sectionIndex = adapters.indexOf(adapter)
         val previousItems = totalItemsBeforeSection(sectionIndex)
         return compoundIndex - previousItems
     }
 
     // Add observers when data set changes
-    private fun currentSectionAdapter(position: Int): RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private fun currentSectionAdapter(position: Int): U {
         var previousCount = 0
         adapters.forEach { adapter ->
             if (position >= (previousCount + adapter.itemCount)) {
@@ -62,7 +62,7 @@ public class CompoundAdapter(
         return adapters.indexOf(currentSectionAdapter(position))
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): T {
         val sectionAdapter = adapters[viewType]
 
         // NOTE: Each section should only handle one particular type of item, or this is gonna cause some screwiness.
@@ -74,19 +74,21 @@ public class CompoundAdapter(
         val sectionAdapter = currentSectionAdapter(position)
         val sectionIndex = adapters.indexOf(sectionAdapter)
 
+        val typedHolder: T = holder as? T ?: throw AssertionError("Holder could not be bound to type")
+
         when (sectionIndex) {
-            0 -> sectionAdapter.onBindViewHolder(holder, position)
-            in (1..(itemCount - 1)) -> sectionAdapter.onBindViewHolder(holder, sectionIndexOfItem(sectionAdapter, position))
+            0 -> sectionAdapter.onBindViewHolder(typedHolder, position)
+            in (1..(itemCount - 1)) -> sectionAdapter.onBindViewHolder(typedHolder, sectionIndexOfItem(sectionAdapter, position))
             else -> throw AssertionError("Section index $sectionIndex out of bounds for adapter with $itemCount sections")
         }
     }
 
 
-    fun notifyItemRemoved(adapter: RecyclerView.Adapter<RecyclerView.ViewHolder>, removedIndex: Int) {
+    fun notifyItemRemoved(adapter: U, removedIndex: Int) {
         notifyItemRemoved(compoundIndexOfItem(adapter, removedIndex))
     }
 
-    fun notifyItemChanged(adapter: RecyclerView.Adapter<RecyclerView.ViewHolder>, changeIndex: Int) {
+    fun notifyItemChanged(adapter: U, changeIndex: Int) {
         notifyItemChanged(compoundIndexOfItem(adapter, changeIndex))
     }
 
