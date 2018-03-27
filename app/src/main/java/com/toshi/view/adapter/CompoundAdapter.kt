@@ -9,7 +9,7 @@ individual adapters.
 */
 class CompoundAdapter<T: RecyclerView.ViewHolder, U: RecyclerView.Adapter<T>>(
         var adapters: List<U>
-): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+): RecyclerView.Adapter<T>() {
 
     private fun totalItemsBeforeSection(sectionIndex: Int): Int {
         when (sectionIndex) {
@@ -70,15 +70,13 @@ class CompoundAdapter<T: RecyclerView.ViewHolder, U: RecyclerView.Adapter<T>>(
     }
 
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: T, position: Int) {
         val sectionAdapter = currentSectionAdapter(position)
         val sectionIndex = adapters.indexOf(sectionAdapter)
 
-        val typedHolder: T = holder as? T ?: throw AssertionError("Holder could not be bound to type")
-
         when (sectionIndex) {
-            0 -> sectionAdapter.onBindViewHolder(typedHolder, position)
-            in (1..(itemCount - 1)) -> sectionAdapter.onBindViewHolder(typedHolder, sectionIndexOfItem(sectionAdapter, position))
+            0 -> sectionAdapter.onBindViewHolder(holder, position)
+            in (1..(itemCount - 1)) -> sectionAdapter.onBindViewHolder(holder, sectionIndexOfItem(sectionAdapter, position))
             else -> throw AssertionError("Section index $sectionIndex out of bounds for adapter with $itemCount sections")
         }
     }
