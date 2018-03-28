@@ -165,7 +165,6 @@ dependencies {
             'com.jakewharton.timber:timber:4.6.1',
     )
 
-    kapt 'com.android.databinding:compiler:2.3.1'
     ktlint "com.github.shyiko:ktlint:0.12.1"
 
     compile('com.crashlytics.sdk.android:crashlytics:2.7.1@aar') {
