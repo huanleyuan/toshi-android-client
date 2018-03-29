@@ -12,53 +12,27 @@ import com.toshi.model.sofa.SofaMessage
 import com.toshi.model.sofa.SofaType
 import com.toshi.util.logging.LogUtil
 import com.toshi.view.BaseApplication
-import com.toshi.view.adapter.listeners.OnItemClickListener
 import java.io.IOException
-import kotlin.reflect.KClass
 
 class ConversationAdapter(
         private val onItemClickListener: (Conversation) -> Unit,
         private val onItemLongClickListener: (Conversation) -> Unit
-    ): RecyclerView.Adapter<ThreadViewHolder>(), CompoundableAdapter {
+    ): BaseCompoundableAdapter<ThreadViewHolder, Conversation>() {
+
 
     // COMPOUNDABLE ADAPTER OVERRIDES
 
-    override fun genericBindViewHolder(viewHolder: RecyclerView.ViewHolder, position: Int) {
+    override fun compoundableBindViewHolder(viewHolder: RecyclerView.ViewHolder, adapterIndex: Int) {
         val typedHolder = viewHolder as? ThreadViewHolder ?: throw AssertionError("This is not the right type!")
-        onBindViewHolder(typedHolder, position)
+        onBindViewHolder(typedHolder, adapterIndex)
     }
 
-    override fun genericCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return onCreateViewHolder(parent, viewType)
-    }
-
-    override fun genericItemCount(): Int {
-        return itemCount
+    override fun setItemList(items: List<Conversation>) {
+        // Don't show conversations with invalid recipients.
+        super.setItemList(items.filter { !it.isRecipientInvalid })
     }
 
     // MAIN CLASS STUFF
-
-    private lateinit var conversations: MutableList<Conversation>
-
-    fun setConversations(conversations: List<Conversation>) {
-        this.conversations = conversations.toMutableList()
-        notifyDataSetChanged()
-    }
-
-    fun addConversation(conversation: Conversation) {
-        conversations.add(conversation)
-        notifyDataSetChanged()
-    }
-
-    fun removeConversation(conversation: Conversation) {
-        conversations.remove(conversation)
-        notifyDataSetChanged()
-    }
-
-
-    override fun getItemCount(): Int {
-        return conversations.size
-    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ThreadViewHolder {
         val itemView = LayoutInflater.from(parent.context).inflate(R.layout.list_item__recent, parent, false)
@@ -66,7 +40,7 @@ class ConversationAdapter(
     }
 
     override fun onBindViewHolder(holder: ThreadViewHolder, position: Int) {
-        val conversation = conversations[position]
+        val conversation = safelyAt(position) ?: throw AssertionError("No conversation at $position")
         holder.setThread(conversation)
 
         val formattedLatestMessage = formatLastMessage(conversation.latestMessage)
@@ -124,14 +98,5 @@ class ConversationAdapter(
         }
 
         return ""
-    }
-
-    fun updateConversations(updatedConversations: List<Conversation>) {
-        if (updatedConversations.isEmpty()) return
-
-        // Only include conversations with valid recipients
-        conversations = updatedConversations.filter { !it.isRecipientInvalid }.toMutableList()
-
-        notifyDataSetChanged()
     }
 }

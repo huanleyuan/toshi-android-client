@@ -132,7 +132,7 @@ class RecentFragment : TopLevelFragment() {
 //                }
 
         recents.apply {
-            layoutManager = LinearLayoutManager(context)
+            layoutManager =  LinearLayoutManager(context)
             itemAnimator = DefaultItemAnimator()
             adapter = recentAdapter
         }
@@ -160,19 +160,19 @@ class RecentFragment : TopLevelFragment() {
     }
 
     private fun handleConversations(acceptedConversations: List<Conversation>, unacceptedConversation: List<Conversation>) {
-        conversationRequestAdapter.setConversations(unacceptedConversation)
-        conversationAdapter.setConversations(acceptedConversations)
+        conversationRequestAdapter.setItemList(unacceptedConversation)
+        conversationAdapter.setItemList(acceptedConversations)
         updateViewState()
     }
 
     private fun handleAcceptedConversation(updatedConversation: Conversation) {
-        conversationRequestAdapter.remove(updatedConversation)
-        conversationAdapter.addConversation(updatedConversation)
+        conversationRequestAdapter.removeItem(updatedConversation)
+        conversationAdapter.addItem(updatedConversation)
         updateViewState()
     }
 
     private fun handleUnacceptedConversation(updatedConversation: Conversation) {
-        conversationRequestAdapter.remove(updatedConversation)
+        conversationRequestAdapter.removeItem(updatedConversation)
         updateViewState()
     }
 
@@ -183,7 +183,8 @@ class RecentFragment : TopLevelFragment() {
     }
 
     private fun removeItemAtWithUndo(conversation: Conversation) {
-        recentAdapter.removeItem(conversation, recents)
+        //TODO: Fix removing an item
+//        recentAdapter.removeItem(conversation, recents)
         updateViewState()
     }
 
@@ -199,7 +200,9 @@ class RecentFragment : TopLevelFragment() {
             }
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, swipeDir: Int) {
-                recentAdapter.removeItemAtWithUndo(viewHolder.adapterPosition, recyclerView)
+                // TODO: Fix removing with undo
+
+//                recentAdapter.removeItemAtWithUndo(viewHolder.adapterPosition, recyclerView)
                 updateEmptyState()
             }
         })
@@ -251,6 +254,7 @@ class RecentFragment : TopLevelFragment() {
 
     override fun onStop() {
         super.onStop()
-        recentAdapter.doDelete()
+        // TODO: Figure out what the shit this did
+//        recentAdapter.doDelete()
     }
 }

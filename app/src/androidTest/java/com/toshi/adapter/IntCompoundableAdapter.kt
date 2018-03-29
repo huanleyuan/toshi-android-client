@@ -3,7 +3,7 @@ package com.toshi.adapter
 import android.support.v7.widget.RecyclerView
 import android.view.ViewGroup
 import android.widget.TextView
-import com.toshi.view.adapter.CompoundableAdapter
+import com.toshi.view.adapter.BaseCompoundableAdapter
 
 class IntViewHolder(val view: ViewGroup): RecyclerView.ViewHolder(view) {
 
@@ -18,20 +18,15 @@ class IntViewHolder(val view: ViewGroup): RecyclerView.ViewHolder(view) {
     }
 }
 
-class IntCompoundableAdapter(
-        val ints: List<Int>
-): RecyclerView.Adapter<IntViewHolder>(), CompoundableAdapter {
-    override fun genericBindViewHolder(viewHolder: RecyclerView.ViewHolder, position: Int) {
+class IntCompoundableAdapter(ints: List<Int>): BaseCompoundableAdapter<IntViewHolder, Int>() {
+
+    init {
+        setItemList(ints)
+    }
+
+    override fun compoundableBindViewHolder(viewHolder: RecyclerView.ViewHolder, adapterIndex: Int) {
         val typedHolder = viewHolder as? IntViewHolder ?: return
-        onBindViewHolder(typedHolder, position)
-    }
-
-    override fun genericCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return onCreateViewHolder(parent, viewType)
-    }
-
-    override fun genericItemCount(): Int {
-        return itemCount
+        onBindViewHolder(typedHolder, adapterIndex)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): IntViewHolder {
@@ -39,12 +34,7 @@ class IntCompoundableAdapter(
     }
 
     override fun onBindViewHolder(holder: IntViewHolder, position: Int) {
-        val int = ints[position]
+        val int = itemAt(position)
         holder.displayValue(int)
-    }
-
-
-    override fun getItemCount(): Int {
-        return ints.size
     }
 }

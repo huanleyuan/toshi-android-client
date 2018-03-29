@@ -1,6 +1,5 @@
 package com.toshi.adapter
 
-import android.app.Activity
 import android.content.Context
 import android.support.test.runner.AndroidJUnit4
 import android.support.test.rule.ActivityTestRule
@@ -9,6 +8,7 @@ import android.support.v7.widget.RecyclerView
 import com.toshi.view.activity.SplashActivity
 import com.toshi.view.adapter.CompoundAdapter
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Rule
@@ -41,6 +41,7 @@ class CompoundAdapterTests {
             intAdapter,
             stringAdapter
     ))
+    private val initialCompoundSize = intList.size + stringList.size
 
 
     private fun context(): Context {
@@ -49,8 +50,7 @@ class CompoundAdapterTests {
 
     @Test
     fun compoundAdapterHasCorrectTotalNumberOfItems() {
-        val totalItems = intList.size + stringList.size
-        assertEquals(testCompoundAdapter.itemCount, totalItems)
+        assertEquals(testCompoundAdapter.itemCount, initialCompoundSize)
     }
     @Test
     fun compoundAdapterReturnsCorrectViewHolderForSectionIndex() {
@@ -118,5 +118,39 @@ class CompoundAdapterTests {
             return
         }
         assertEquals(stringView.textView.text, stringList.first())
+    }
+
+    @Test
+    fun addingAnotherAdapterUpdatesCount() {
+        assertEquals(testCompoundAdapter.itemCount, initialCompoundSize)
+
+        val anotherIntAdapter = IntCompoundableAdapter(intList)
+        testCompoundAdapter.appendAdapter(anotherIntAdapter)
+
+        assertEquals(testCompoundAdapter.itemCount, (initialCompoundSize + intList.size))
+        assertEquals(testCompoundAdapter.indexOf(anotherIntAdapter), 2)
+    }
+
+    @Test
+    fun addingAnotherAdapterUpdatesCountAndIndex() {
+        assertEquals(testCompoundAdapter.itemCount, initialCompoundSize)
+
+        val anotherStringAdapter = StringCompoundableAdapter(stringList)
+        testCompoundAdapter.insertAdapter(anotherStringAdapter, 0)
+
+        assertEquals(testCompoundAdapter.itemCount, (initialCompoundSize + stringList.size))
+
+        assertEquals(testCompoundAdapter.indexOf(anotherStringAdapter), 0)
+        assertEquals(testCompoundAdapter.indexOf(stringAdapter), 2)
+    }
+
+    @Test
+    fun testRemovingAnAdapterUpdatesCountAndIndex() {
+        assertEquals(testCompoundAdapter.itemCount, initialCompoundSize)
+
+        testCompoundAdapter.removeAdapter(stringAdapter)
+
+        assertEquals(testCompoundAdapter.itemCount, (initialCompoundSize - stringList.size))
+        assertNull(testCompoundAdapter.indexOf(stringAdapter))
     }
 }

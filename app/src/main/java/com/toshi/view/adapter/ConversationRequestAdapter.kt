@@ -34,49 +34,16 @@ class ConversationRequestAdapter(
         private val onItemCLickListener: (Conversation) -> Unit,
         private val onAcceptClickListener: (Conversation) -> Unit,
         private val onRejectClickListener: (Conversation) -> Unit
-) : RecyclerView.Adapter<ConversationRequestViewHolder>(), CompoundableAdapter {
+) : BaseCompoundableAdapter<ConversationRequestViewHolder, Conversation>() {
 
     // COMPOUNDABLE ADAPTER OVERRIDES
 
-    override fun genericBindViewHolder(viewHolder: RecyclerView.ViewHolder, position: Int) {
+    override fun compoundableBindViewHolder(viewHolder: RecyclerView.ViewHolder, adapterIndex: Int) {
         val typedHolder = viewHolder as? ConversationRequestViewHolder ?: throw AssertionError("This is not the right type!")
-        onBindViewHolder(typedHolder, position)
+        onBindViewHolder(typedHolder, adapterIndex)
     }
 
-    override fun genericCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return onCreateViewHolder(parent, viewType)
-    }
-
-    override fun genericItemCount(): Int {
-        return itemCount
-    }
-
-    private val conversations = mutableListOf<Conversation>()
     lateinit var localUser: User
-
-    fun setConversations(conversations: List<Conversation>) {
-        this.conversations.clear()
-        this.conversations.addAll(conversations)
-        this.notifyDataSetChanged()
-    }
-
-    fun addConversation(conversation: Conversation) {
-        val index = conversations.indexOf(conversation)
-        if (index == -1) {
-            conversations.add(0, conversation)
-            notifyItemInserted(0)
-            return
-        }
-
-        conversations[index] = conversation
-        notifyItemChanged(index)
-    }
-
-    fun remove(conversation: Conversation) {
-        val index = conversations.indexOf(conversation)
-        conversations.remove(conversation)
-        notifyItemRemoved(index)
-    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ConversationRequestViewHolder {
         val layoutInflater = LayoutInflater.from(parent.context)
@@ -84,7 +51,7 @@ class ConversationRequestAdapter(
     }
 
     override fun onBindViewHolder(holder: ConversationRequestViewHolder, position: Int) {
-        val conversation = conversations[position]
+        val conversation = safelyAt(position) ?: throw AssertionError("No conversation at index $position")
         val formattedLatestMessage = conversation.latestMessage?.let { formatLastMessage(it) } ?: ""
         holder
                 .setConversation(conversation)
@@ -122,6 +89,4 @@ class ConversationRequestAdapter(
             else -> ""
         }
     }
-
-    override fun getItemCount() = conversations.size
 }

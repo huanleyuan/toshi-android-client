@@ -75,20 +75,20 @@ class ConversationRequestActivity : AppCompatActivity() {
             conversationsAndUser -> conversationsAndUser?.let { handleConversationsAndLocalUser(it.first, it.second) }
         })
         viewModel.updatedConversation.observe(this, Observer {
-            updatedConversation -> updatedConversation?.let { requestsAdapter.addConversation(it) }
+            updatedConversation -> updatedConversation?.let { requestsAdapter.addItem(it) }
         })
         viewModel.acceptConversation.observe(this, Observer {
-            acceptedConversation -> acceptedConversation?.let { requestsAdapter.remove(it); goToConversation(it) }
+            acceptedConversation -> acceptedConversation?.let { requestsAdapter.removeItem(it); goToConversation(it) }
         })
         viewModel.rejectConversation.observe(this, Observer {
-            rejectedConversation -> rejectedConversation?.let { requestsAdapter.remove(it); finishIfEmpty() }
+            rejectedConversation -> rejectedConversation?.let { requestsAdapter.removeItem(it); finishIfEmpty() }
         })
     }
 
     private fun handleConversationsAndLocalUser(conversations: List<Conversation>, localUser: User) {
         if (conversations.isEmpty()) finish()
         requestsAdapter.localUser = localUser
-        requestsAdapter.setConversations(conversations)
+        requestsAdapter.setItemList(conversations)
     }
 
     private fun getConversationsAndLocalUser() = viewModel.getUnacceptedConversationsAndLocalUser()
