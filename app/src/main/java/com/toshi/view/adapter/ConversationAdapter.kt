@@ -130,7 +130,7 @@ class ConversationAdapter(
         if (updatedConversations.isEmpty()) return
 
         // Only include conversations with valid recipients
-        conversations = updatedConversations.filter { !it.isRecipientInvalid }
+        conversations = updatedConversations.filter { !it.isRecipientInvalid }.toMutableList()
 
         notifyDataSetChanged()
     }

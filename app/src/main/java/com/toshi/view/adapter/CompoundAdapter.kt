@@ -22,19 +22,23 @@ class CompoundAdapter(
         var adapters: List<CompoundableAdapter>
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private fun adapterAtIndex(index: Int): CompoundableAdapter {
-        return adapters[index]
+    fun indexOf(adapter: CompoundableAdapter): Int? {
+        if (adapters.contains(adapter)) {
+            return adapters.indexOf(adapter)
+        } else {
+            return null
+        }
     }
 
     private fun totalItemsBeforeSection(sectionIndex: Int): Int {
         when (sectionIndex) {
-            in Int.MIN_VALUE..-1 -> throw AssertionError("No sections at negative indexs!")
+            in Int.MIN_VALUE..-1 -> throw AssertionError("No sections at negative indexes!")
             0 ->  /* There wouldn't be any items before section 0 */ return 0
-            in 1..(sectionIndex - 1) -> {
+            in 1..sectionIndex -> {
                 val previousAdapters = adapters.subList(0, sectionIndex)
                 return previousAdapters.fold(0, { acc, adapter -> return acc + adapter.genericItemCount() })
             }
-            in sectionIndex..Int.MAX_VALUE -> throw AssertionError("Looking for section at $sectionIndex but there are only $itemCount sections")
+            in (sectionIndex + 1)..Int.MAX_VALUE -> throw AssertionError("Looking for section at $sectionIndex but there are only ${adapters.size} sections")
         }
 
         // Even though the `when` should theoretically cover all possible values of Int, we apparently still need to do this:
@@ -74,7 +78,7 @@ class CompoundAdapter(
 
     override fun getItemViewType(position: Int): Int {
         // Use the index of the section adapter to route the view type to the proper place
-        return adapters.indexOf(currentSectionAdapter(position))
+        return indexOf(currentSectionAdapter(position)) ?: -1
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -87,7 +91,7 @@ class CompoundAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val sectionAdapter = currentSectionAdapter(position)
-        val sectionIndex = adapters.indexOf(sectionAdapter)
+        val sectionIndex = indexOf(sectionAdapter) ?: return
 
         when (sectionIndex) {
             0 -> sectionAdapter.genericBindViewHolder(holder, position)
